@@ -1,0 +1,71 @@
+/* ===== Calculator Display Screen ===== */
+.calc-screen {
+  background: linear-gradient(160deg, #080a10 0%, #0a0e16 100%);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.calc-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ===== Calculator Input ===== */
+.calc-input {
+  font-family: 'JetBrains Mono', monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.calc-input:focus {
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+/* ===== Calculator Button Effects ===== */
+.calc-btn {
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.calc-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.calc-btn-primary {
+  background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.calc-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
+  box-shadow: 0 4px 16px rgba(20, 184, 166, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.calc-btn-primary:disabled {
+  background: linear-gradient(180deg, #134e4a 0%, #0f3a36 100%);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+/* ===== Tab active glow ===== */
+.tab-glow {
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.08);
+}
+
+/* ===== Custom scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

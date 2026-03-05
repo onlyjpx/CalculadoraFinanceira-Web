@@ -1,0 +1,686 @@
+\documentclass[12pt,a4paper]{article}
+
+% ========== Pacotes ==========
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+
+\geometry{margin=2.5cm}
+
+% ========== Cores ==========
+\definecolor{codebg}{HTML}{0F172A}
+\definecolor{codetext}{HTML}{E2E8F0}
+\definecolor{teal600}{HTML}{0D9488}
+\definecolor{keyword}{HTML}{14B8A6}
+\definecolor{string}{HTML}{34D399}
+\definecolor{comment}{HTML}{64748B}
+
+% ========== Configuração de Listings ==========
+\lstset{
+  basicstyle=\ttfamily\small\color{codetext},
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{keyword}\bfseries,
+  stringstyle=\color{string},
+  commentstyle=\color{comment}\itshape,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  tabsize=2,
+  showstringspaces=false,
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em,
+}
+
+\lstdefinelanguage{json}{
+  morestring=[b]",
+  literate=
+    *{:}{{{\color{keyword}{:}}}}{1}
+    {,}{{{\color{keyword}{,}}}}{1}
+    {\{}{{{\color{keyword}{\{}}}}{1}
+    {\}}{{{\color{keyword}{\}}}}}{1}
+    {[}{{{\color{keyword}{[}}}}{1}
+    {]}{{{\color{keyword}{]}}}}{1},
+}
+
+% ========== Cabeçalho/Rodapé ==========
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Calculadora Financeira --- Documentação Técnica}
+\fancyhead[R]{\small\thepage}
+\fancyfoot[C]{\small\textit{Gerado automaticamente}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ========== Capa ==========
+\title{
+  \vspace{2cm}
+  {\Huge\bfseries Calculadora Financeira}\\[0.5cm]
+  {\Large Documentação Técnica do Sistema}\\[1cm]
+  {\normalsize React + Kotlin/Spring Boot}
+}
+\author{Projeto Acadêmico --- Matemática Financeira}
+\date{Março de 2026}
+
+% ========================================================================
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\tableofcontents
+\newpage
+
+% ========================================================================
+\section{Visão Geral do Sistema}
+
+A \textbf{Calculadora Financeira} é uma aplicação web completa para cálculos de matemática financeira. O sistema é dividido em duas camadas:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Frontend}: aplicação SPA (Single Page Application) construída com \textbf{React} + \textbf{Vite}, estilizada com \textbf{Tailwind CSS}, servida na porta \texttt{5173}.
+  \item \textbf{Backend}: API REST construída com \textbf{Kotlin} + \textbf{Spring Boot 3.5}, compilada com \textbf{Gradle}, servida na porta \texttt{8080}.
+\end{itemize}
+
+\subsection{Módulos Implementados}
+
+\begin{enumerate}
+  \item \textbf{Capitalização Simples} --- cálculo de VP, VF, J, $i$ e $n$ com juros simples.
+  \item \textbf{Capitalização Composta} --- cálculo de VP, VF, J, $i$ e $n$ com juros compostos.
+  \item \textbf{Desconto Comercial} --- cálculo de taxa de desconto ($d$) e taxa efetiva ($i_e$).
+  \item \textbf{Taxas Equivalentes} --- conversão de taxa efetiva entre períodos (diário, mensal, bimestral, trimestral, semestral, anual).
+  \item \textbf{Taxas Abaixo (Nominal $\leftrightarrow$ Proporcional)} --- conversão entre taxa nominal $i_k$ e taxa proporcional $i_{\text{prop}}$.
+\end{enumerate}
+
+% ========================================================================
+\section{Arquitetura}
+
+\subsection{Padrão MVC}
+
+Tanto o backend quanto o frontend seguem o padrão \textbf{Model--View--Controller}:
+
+\begin{center}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Camada} & \textbf{Backend (Kotlin)} & \textbf{Frontend (React)} \\
+  \midrule
+  Model      & \texttt{model/*.kt} (data classes)    & Estado local (\texttt{useState}) \\
+  Service    & \texttt{service/*.kt} (lógica)         & \texttt{services/*.js} (HTTP) \\
+  Controller & \texttt{controller/*.kt} (REST)        & \texttt{controllers/*.js} (parsers) \\
+  View       & ---                                    & \texttt{components/*.jsx} (UI) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Comunicação}
+
+\begin{tcolorbox}[colback=codebg,coltext=codetext,colframe=gray!40,title=Fluxo de uma requisição]
+\ttfamily\small
+Componente React $\xrightarrow{\text{onSubmit}}$ Controller (JS)
+$\xrightarrow{\text{fetch POST}}$ Controller (Kotlin)
+$\xrightarrow{}$ Service (Kotlin) $\xrightarrow{\text{JSON}}$ Frontend
+\end{tcolorbox}
+
+O client HTTP (\texttt{httpClient.js}) encapsula \texttt{fetch} e retorna diretamente o payload JSON (sem \texttt{.data}).
+
+\subsection{Endpoints da API}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+  \toprule
+  \textbf{Método} & \textbf{Rota} & \textbf{Descrição} \\
+  \midrule
+  POST & \texttt{/api/simples/calculate}            & Capitalização simples \\
+  POST & \texttt{/api/composta/calculate}            & Capitalização composta \\
+  POST & \texttt{/api/desconto-comercial/calculate}  & Desconto comercial \\
+  POST & \texttt{/api/taxa-equivalente/calculate}     & Taxas equivalentes \\
+  POST & \texttt{/api/taxas-abaixo/calculate}         & Taxas abaixo (nominal/proporcional) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Todos os endpoints recebem e retornam \texttt{application/json}.
+
+% ========================================================================
+\section{Capitalização Simples}
+\label{sec:simples}
+
+\subsection{Modelo de Dados}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+  \toprule
+  \textbf{Campo} & \textbf{Tipo} & \textbf{Descrição} \\
+  \midrule
+  \texttt{target}   & \texttt{String?} & Variável a calcular (\texttt{montante}, \texttt{capital}, \texttt{juros}, \texttt{taxa}, \texttt{tempo}) \\
+  \texttt{capital}  & \texttt{Double?} & Valor Presente (VP) \\
+  \texttt{montante} & \texttt{Double?} & Valor Futuro (VF) \\
+  \texttt{juros}    & \texttt{Double?} & Juros (J) \\
+  \texttt{taxa}     & \texttt{Double?} & Taxa em \% \\
+  \texttt{tempo}    & \texttt{Double?} & Número de períodos ($n$) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Fórmulas}
+
+Na capitalização simples, os juros são proporcionais ao capital, à taxa e ao tempo.
+
+\begin{tcolorbox}[colback=white,colframe=teal600,title=Fórmulas --- Juros Simples]
+
+\textbf{Montante (Valor Futuro):}
+\begin{equation}
+  VF = VP \cdot (1 + i \cdot n)
+\end{equation}
+
+\textbf{Capital (Valor Presente):}
+\begin{equation}
+  VP = \frac{VF}{1 + i \cdot n}
+\end{equation}
+
+\textbf{Juros:}
+\begin{equation}
+  J = VP \cdot i \cdot n \quad \text{ou} \quad J = VF - VP
+\end{equation}
+
+\textbf{Taxa:}
+\begin{equation}
+  i = \frac{J}{VP \cdot n}
+\end{equation}
+
+\textbf{Tempo:}
+\begin{equation}
+  n = \frac{J}{VP \cdot i}
+\end{equation}
+
+\end{tcolorbox}
+
+\subsection{Lógica de Cálculo}
+
+O serviço \texttt{SimplesService} opera em dois modos:
+
+\begin{enumerate}
+  \item \textbf{Com \texttt{target} definido}: calcula a variável indicada. Se os campos necessários estiverem ausentes, retorna erro HTTP 400 com mensagem descritiva.
+  \item \textbf{Sem \texttt{target}}: infere qual variável está faltando e a calcula automaticamente.
+\end{enumerate}
+
+\subsubsection{Exemplo de Requisição}
+
+\begin{lstlisting}[language=json,title={POST /api/simples/calculate}]
+{
+  "target": "montante",
+  "capital": 1000,
+  "taxa": 2,
+  "tempo": 10
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json,title={Resposta}]
+{
+  "montante": 1200.0
+}
+\end{lstlisting}
+
+\textbf{Cálculo}: $VF = 1000 \times (1 + 0{,}02 \times 10) = 1000 \times 1{,}2 = 1200{,}00$.
+
+% ========================================================================
+\section{Capitalização Composta}
+\label{sec:composta}
+
+\subsection{Modelo de Dados}
+
+Idêntico ao da capitalização simples (mesmos campos: \texttt{target}, \texttt{capital}, \texttt{montante}, \texttt{juros}, \texttt{taxa}, \texttt{tempo}).
+
+\subsection{Fórmulas}
+
+Na capitalização composta, os juros incidem sobre o montante acumulado (juros sobre juros).
+
+\begin{tcolorbox}[colback=white,colframe=teal600,title=Fórmulas --- Juros Compostos]
+
+\textbf{Montante (Valor Futuro):}
+\begin{equation}
+  VF = VP \cdot (1 + i)^n
+\end{equation}
+
+\textbf{Capital (Valor Presente):}
+\begin{equation}
+  VP = \frac{VF}{(1 + i)^n}
+\end{equation}
+
+\textbf{Juros:}
+\begin{equation}
+  J = VP \cdot \left[(1 + i)^n - 1\right] \quad \text{ou} \quad J = VF - VP
+\end{equation}
+
+\textbf{Taxa:}
+\begin{equation}
+  i = \left(\frac{VF}{VP}\right)^{\!\frac{1}{n}} - 1
+\end{equation}
+
+\textbf{Tempo:}
+\begin{equation}
+  n = \frac{\ln(VF / VP)}{\ln(1 + i)}
+\end{equation}
+
+\end{tcolorbox}
+
+\subsection{Lógica de Cálculo}
+
+O serviço \texttt{CompostaService} utiliza as funções \texttt{pow()} e \texttt{ln()} do Kotlin para exponenciação e logaritmo natural. Possui validação de domínio:
+\begin{itemize}
+  \item Para cálculo de taxa: $VP > 0$ e $n \neq 0$.
+  \item Para cálculo de tempo: $VP > 0$, $VF > 0$ e $\ln(1 + i) \neq 0$.
+\end{itemize}
+
+\subsubsection{Exemplo de Requisição}
+
+\begin{lstlisting}[language=json,title={POST /api/composta/calculate}]
+{
+  "target": "montante",
+  "capital": 1000,
+  "taxa": 2,
+  "tempo": 12
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json,title={Resposta}]
+{
+  "montante": 1268.2417945625455
+}
+\end{lstlisting}
+
+\textbf{Cálculo}: $VF = 1000 \times (1 + 0{,}02)^{12} = 1000 \times 1{,}02^{12} \approx 1268{,}24$.
+
+% ========================================================================
+\section{Desconto Comercial (Bancário)}
+\label{sec:desconto}
+
+\subsection{Modelo de Dados}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+  \toprule
+  \textbf{Campo} & \textbf{Tipo} & \textbf{Descrição} \\
+  \midrule
+  \texttt{nominal}       & \texttt{Double?} & Valor nominal do título ($N$) \\
+  \texttt{valorPresente} & \texttt{Double?} & Valor presente ($VP$) \\
+  \texttt{desconto}      & \texttt{Double?} & Desconto absoluto ($D$) \\
+  \texttt{taxaDesconto}  & \texttt{Double?} & Taxa de desconto ($d$) em \% \\
+  \texttt{tempo}         & \texttt{Double?} & Prazo ($n$) \\
+  \texttt{taxaEfetiva}   & \texttt{Double?} & Taxa efetiva ($i_e$) em \% \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Fórmulas}
+
+\begin{tcolorbox}[colback=white,colframe=teal600,title=Fórmulas --- Desconto Comercial]
+
+\textbf{Taxa de desconto:}
+\begin{equation}
+  d = \frac{D}{N \cdot n} \quad \text{ou} \quad d = \frac{1 - VP/N}{n}
+\end{equation}
+
+\textbf{Taxa efetiva equivalente:}
+\begin{equation}
+  i_e = \frac{d}{1 - d \cdot n}
+\end{equation}
+
+\textbf{Relação inversa:}
+\begin{equation}
+  d = \frac{i_e}{1 + i_e \cdot n}
+\end{equation}
+
+\end{tcolorbox}
+
+\subsection{Lógica de Cálculo}
+
+O serviço \texttt{DescontoComercialService} determina automaticamente o que calcular com base nos campos preenchidos:
+
+\begin{itemize}
+  \item Se faltam $d$ e $i_e$: calcula $d$ a partir de $N$, $D$ e $n$ (ou $N$, $VP$ e $n$).
+  \item Se falta $i_e$ e existe $d$: calcula $i_e = d / (1 - d \cdot n)$.
+  \item Se falta $d$ e existe $i_e$: calcula $d = i_e / (1 + i_e \cdot n)$.
+\end{itemize}
+
+% ========================================================================
+\section{Taxas Equivalentes}
+\label{sec:equivalente}
+
+\subsection{Conceito}
+
+Duas taxas são \textbf{equivalentes} quando aplicadas ao mesmo capital, pelo mesmo prazo total, produzem o mesmo montante em regime de juros \textbf{compostos}.
+
+\subsection{Modelo de Dados}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+  \toprule
+  \textbf{Campo} & \textbf{Tipo} & \textbf{Descrição} \\
+  \midrule
+  \texttt{taxaInformada}     & \texttt{Double?} & Taxa efetiva informada em \% \\
+  \texttt{periodoInformado}  & \texttt{String?} & Período da taxa informada \\
+  \texttt{periodoSolicitado} & \texttt{String?} & Período desejado para conversão \\
+  \texttt{n}                 & \texttt{Double?} & Número de períodos (opcional) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Períodos Suportados}
+
+O sistema utiliza a \textbf{convenção comercial de 360 dias} e mapeia cada período ao seu número de ocorrências anuais:
+
+\begin{center}
+\begin{tabular}{lc}
+  \toprule
+  \textbf{Período} & \textbf{Ocorrências por ano} \\
+  \midrule
+  Anual      & 1 \\
+  Semestral  & 2 \\
+  Trimestral & 4 \\
+  Bimestral  & 6 \\
+  Mensal     & 12 \\
+  Diário     & 360 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Fórmula}
+
+\begin{tcolorbox}[colback=white,colframe=teal600,title=Fórmula --- Taxa Equivalente]
+
+Dado que $i$ é a taxa efetiva no período informado com $n_1$ ocorrências anuais, e deseja-se a taxa equivalente para um período com $n_2$ ocorrências anuais:
+
+\begin{equation}
+  i_{\text{eq}} = (1 + i)^{\,n_1 / n_2} - 1
+\end{equation}
+
+\textbf{Exemplo}: 2\% a.m. para taxa anual:
+\[
+  i_{\text{anual}} = (1 + 0{,}02)^{12/1} - 1 = 1{,}02^{12} - 1 \approx 0{,}2682 = 26{,}82\%
+\]
+
+\end{tcolorbox}
+
+\subsection{Resposta da API}
+
+O endpoint retorna:
+\begin{itemize}
+  \item \texttt{taxaEquivalente}: taxa equivalente em \% (arredondada a 6 casas).
+  \item \texttt{taxaInformadaDecimal}: taxa informada em forma decimal.
+  \item \texttt{taxaEquivalenteDecimal}: taxa equivalente em forma decimal.
+  \item \texttt{conversao}: texto descritivo da conversão (ex: ``Taxa de 2\% ao mensal = 26.824179\% ao anual'').
+\end{itemize}
+
+% ========================================================================
+\section{Taxas Abaixo (Nominal $\leftrightarrow$ Proporcional)}
+\label{sec:abaixo}
+
+\subsection{Conceito}
+
+Na capitalização composta, a \textbf{taxa nominal} ($i_k$) é uma taxa enunciada que deve ser dividida pelo número de capitalizações ($k$) para obter a \textbf{taxa proporcional/efetiva por período} ($i_{\text{prop}}$).
+
+\subsection{Modelo de Dados}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+  \toprule
+  \textbf{Campo} & \textbf{Tipo} & \textbf{Descrição} \\
+  \midrule
+  \texttt{taxaNominal}       & \texttt{Double?} & Taxa nominal $i_k$ em \% \\
+  \texttt{taxaProporcional}  & \texttt{Double?} & Taxa proporcional em \% \\
+  \texttt{k}                 & \texttt{Int?}    & Periodicidade (nº de capitalizações) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Fórmulas}
+
+\begin{tcolorbox}[colback=white,colframe=teal600,title=Fórmulas --- Taxas Abaixo]
+
+\textbf{Taxa proporcional a partir da nominal:}
+\begin{equation}
+  i_{\text{prop}} = \frac{i_k}{k}
+\end{equation}
+
+\textbf{Taxa nominal a partir da proporcional:}
+\begin{equation}
+  i_k = k \cdot i_{\text{prop}}
+\end{equation}
+
+\textbf{Exemplo}: Taxa nominal de 12\% a.a. com capitalização mensal ($k = 12$):
+\[
+  i_{\text{prop}} = \frac{12\%}{12} = 1\% \text{ ao mês}
+\]
+
+\end{tcolorbox}
+
+% ========================================================================
+\section{Stack Tecnológico}
+
+\subsection{Backend}
+
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Tecnologia} & \textbf{Versão/Detalhes} \\
+  \midrule
+  Linguagem      & Kotlin 1.9.25 \\
+  Framework      & Spring Boot 3.5.7 \\
+  Build Tool     & Gradle (Kotlin DSL), via Gradle Wrapper \\
+  Java           & OpenJDK 21 (Temurin) \\
+  Serialização   & Jackson (jackson-module-kotlin) \\
+  Dev Tools      & Spring Boot DevTools (hot reload) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Frontend}
+
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Tecnologia} & \textbf{Versão/Detalhes} \\
+  \midrule
+  Framework     & React (via Vite) \\
+  Bundler       & Vite 7.x \\
+  Estilização   & Tailwind CSS 4.x \\
+  Tipografia    & Inter (UI), JetBrains Mono (valores) \\
+  HTTP Client   & \texttt{fetch} nativo (wrapper customizado) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ========================================================================
+\section{Interface do Usuário}
+\label{sec:ui}
+
+A interface apresenta um design com estética de \textbf{calculadora científica}, mantendo modernidade e responsividade.
+
+\subsection{Estrutura Visual}
+
+\begin{enumerate}
+  \item \textbf{Cabeçalho}: ícone Σ com título ``Calculadora Financeira''.
+  \item \textbf{Abas de navegação}: quatro abas --- \textbf{Simples}, \textbf{Composta}, \textbf{Desconto} e \textbf{Taxas} --- permitem alternar entre os módulos.
+  \item \textbf{Tela de resultado} (\texttt{ResultDisplay}): área de display no topo de cada formulário que mostra:
+  \begin{itemize}
+    \item Estado vazio: ``0,00'' em cinza (como display desligado).
+    \item Resultado: valor principal em destaque (fonte monospace verde, tamanho grande) com valores secundários em grade abaixo.
+    \item Erro: mensagem em vermelho com ícone de alerta.
+  \end{itemize}
+  \item \textbf{Seletor de variável}: dropdown customizado (\texttt{Select}) para escolher qual variável calcular (target).
+  \item \textbf{Campos de entrada}: inputs com design escuro, fonte monospace, com seletores de unidade (\texttt{UnitSelect}) para taxa e tempo.
+  \item \textbf{Botões de ação}: ``\texttt{= Calcular}'' (gradiente teal com efeito de pressão) e ``\texttt{C}'' (limpar).
+\end{enumerate}
+
+\subsection{Componentes Reutilizáveis}
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+  \toprule
+  \textbf{Componente} & \textbf{Função} \\
+  \midrule
+  \texttt{Select}           & Dropdown customizado com teclado (setas, Enter, Esc), usa \texttt{useRef} para evitar problemas de dependência. \\
+  \texttt{UnitSelect}       & Seletor de unidade (á.m., a.d., a.a., etc.) para campos de taxa e tempo. \\
+  \texttt{FormulaTooltip}   & Tooltip que exibe a fórmula utilizada ao passar o mouse. \\
+  \texttt{ResultDisplay}    & Display LCD-like com formatação automática de valores numéricos e percentuais. \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Conversão de Unidades no Frontend}
+
+O frontend realiza conversão de unidades de taxa e tempo \textbf{antes} de enviar ao backend, utilizando o utilitário \texttt{timeUnits.js} com a função \texttt{convertPeriods()}. Períodos suportados: dia, mês, trimestre, semestre e ano.
+
+% ========================================================================
+\section{Tratamento de Erros}
+
+O sistema implementa validação em ambas as camadas:
+
+\subsection{Backend}
+
+Os serviços de capitalização simples e composta validam as entradas e lançam \texttt{ResponseStatusException} com código HTTP \textbf{400 (Bad Request)} e mensagem descritiva quando os campos necessários estão ausentes.
+
+\begin{lstlisting}[language=java,title={Exemplo de validação (SimplesService.kt)}]
+"montante" -> when {
+    vp != null && i != null && n != null ->
+        mapOf("montante" to vp * (1 + i * n))
+    else -> throw ResponseStatusException(
+        HttpStatus.BAD_REQUEST,
+        "Para calcular Montante (VF), informe
+         (Capital, Taxa e Tempo) ou (Capital e Juros)."
+    )
+}
+\end{lstlisting}
+
+\subsection{Frontend}
+
+O frontend captura erros da API e os exibe no componente \texttt{ResultDisplay}:
+
+\begin{lstlisting}[language=java,title={Captura de erro no componente}]
+catch (err) {
+  setError(err?.payload?.message
+    || err?.message
+    || 'Erro ao calcular');
+}
+\end{lstlisting}
+
+% ========================================================================
+\section{Como Executar}
+
+\subsection{Pré-requisitos}
+
+\begin{itemize}
+  \item Java 17+ (recomendado: OpenJDK 21)
+  \item Node.js LTS + npm
+\end{itemize}
+
+\subsection{Backend (porta 8080)}
+
+\begin{lstlisting}[language=bash,title={Terminal na pasta backend/}]
+.\gradlew.bat bootRun
+\end{lstlisting}
+
+Ou via \textbf{IntelliJ IDEA}: abra a pasta \texttt{backend/}, aguarde a indexação do Gradle e clique no ícone \textbf{Run} ($\blacktriangleright$) ao lado do \texttt{fun main()} em \texttt{BackendApplication.kt}.
+
+\subsection{Frontend (porta 5173)}
+
+\begin{lstlisting}[language=bash,title={Terminal na pasta app/}]
+npm install
+npm run dev
+\end{lstlisting}
+
+Acesse \url{http://localhost:5173} no navegador.
+
+% ========================================================================
+\section{Estrutura de Diretórios}
+
+\begin{lstlisting}[title={Árvore do projeto}]
+calc-financeira/
+  app/                          # Frontend React
+    src/
+      components/
+        SimplesForm.jsx         # Formulario cap. simples
+        CompostaForm.jsx        # Formulario cap. composta
+        DescontoComercialForm.jsx
+        TaxaEquivalenteForm.jsx
+        ui/
+          Select.jsx            # Dropdown customizado
+          UnitSelect.jsx        # Seletor de unidade
+          FormulaTooltip.jsx    # Tooltip de formula
+          ResultDisplay.jsx     # Display de resultado
+      controllers/
+        simplesController.js
+        compostaController.js
+        descontoController.js
+        taxaEquivalenteController.js
+        taxasAbaixoController.js
+      services/
+        simplesService.js
+        compostaService.js
+        descontoService.js
+        taxaEquivalenteService.js
+        taxasAbaixoService.js
+        httpClient.js           # Wrapper fetch
+      utils/
+        timeUnits.js            # Conversao de periodos
+      App.jsx                   # Layout principal
+      App.css                   # Estilos calculadora
+      index.css                 # Tailwind + reset
+      main.jsx                  # Entry point
+  backend/                      # Backend Kotlin/Spring
+    src/main/kotlin/com/calculadora/backend/
+      BackendApplication.kt     # Classe principal
+      model/
+        CapitalizacaoSimples.kt
+        CapitalizacaoComposta.kt
+        DescontoComercial.kt
+        TaxaEquivalente.kt
+        TaxasAbaixo.kt
+      service/
+        SimplesService.kt
+        CompostaService.kt
+        DescontoComercialService.kt
+        TaxaEquivalenteService.kt
+        TaxasAbaixoService.kt
+      controller/
+        SimplesController.kt
+        CompostaController.kt
+        DescontoComercialController.kt
+        TaxaEquivalenteController.kt
+        TaxasAbaixoController.kt
+    build.gradle.kts            # Build Gradle
+    gradlew.bat                 # Gradle Wrapper (Windows)
+\end{lstlisting}
+
+% ========================================================================
+\section{Resumo das Fórmulas}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Módulo} & \textbf{Fórmula Principal} & \textbf{Regime} \\
+  \midrule
+  Cap.\ Simples   & $VF = VP(1 + i \cdot n)$ & Simples \\
+  Cap.\ Composta  & $VF = VP(1 + i)^n$       & Composto \\
+  Desconto Com.   & $i_e = \dfrac{d}{1 - d \cdot n}$ & Simples \\[0.4em]
+  Taxa Equiv.     & $i_{\text{eq}} = (1 + i)^{n_1/n_2} - 1$ & Composto \\[0.2em]
+  Taxa Abaixo     & $i_{\text{prop}} = i_k / k$ & Proporcional \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

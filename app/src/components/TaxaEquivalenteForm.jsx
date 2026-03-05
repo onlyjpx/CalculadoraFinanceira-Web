@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import FormulaTooltip from './ui/FormulaTooltip';
 import Select from './ui/Select';
+import ResultDisplay from './ui/ResultDisplay';
 import { calcularTaxaEquivalenteController } from '../controllers/taxaEquivalenteController';
 
 const initial = { 
@@ -52,31 +53,26 @@ export default function TaxaEquivalenteForm() {
   };
 
   return (
-    <div className="bg-slate-800/60 backdrop-blur rounded-xl p-6 shadow-lg shadow-black/30 border border-slate-700">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        Taxas Equivalentes
-        <span className="text-xs font-normal px-2 py-0.5 rounded bg-sky-600/30 text-sky-300 border border-sky-500/40">Beta</span>
-      </h2>
-      
-      <form onSubmit={onSubmit} onReset={onReset} className="grid gap-5">
-        <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-700/50">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-sm font-semibold text-slate-200">Fórmula</h3>
-            <FormulaTooltip formula="i_eq = (1 + i)^(n_eq/n) - 1" />
-          </div>
-          <p className="text-xs text-slate-400">
-            Onde: <span className="text-sky-400">i</span> = taxa informada, 
-            <span className="text-sky-400"> i_eq</span> = taxa equivalente, 
-            <span className="text-sky-400"> n</span> = período informado, 
-            <span className="text-sky-400"> n_eq</span> = período solicitado
-          </p>
+    <div>
+      {/* Calculator Screen */}
+      <ResultDisplay result={result} error={error} hint="Informe a taxa e os períodos para converter." mainKey="taxaEquivalente" />
+
+      <form onSubmit={onSubmit} onReset={onReset} className="mt-5">
+        {/* Formula reference */}
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-[#0c0c14] border border-slate-800/40">
+          <FormulaTooltip formula="i_eq = (1 + i)^(n_eq/n) - 1" />
+          <span className="text-[10px] text-slate-500">
+            <span className="text-teal-400">i</span> = taxa informada,
+            <span className="text-teal-400"> i_eq</span> = taxa equivalente,
+            <span className="text-teal-400"> n</span> = período informado,
+            <span className="text-teal-400"> n_eq</span> = período solicitado
+          </span>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* Input grid */}
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-slate-300 mb-1" htmlFor="taxaInformada">
-              Taxa Informada (%)
-            </label>
+            <label className="text-[11px] font-medium text-slate-400 mb-1" htmlFor="taxaInformada">Taxa Informada (%)</label>
             <input
               id="taxaInformada"
               name="taxaInformada"
@@ -86,15 +82,13 @@ export default function TaxaEquivalenteForm() {
               onChange={onChange}
               placeholder="ex: 2.5"
               required
-              className="rounded-lg border px-3 py-2 bg-slate-900/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 border-slate-600"
+              className="calc-input rounded-lg border border-slate-700/50 px-3 py-2.5 bg-[#0c0c14] text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500/50 text-sm"
             />
-            <span className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Taxa efetiva no período informado</span>
+            <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-600">Taxa efetiva no período informado</span>
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-slate-300 mb-1" htmlFor="periodoInformado">
-              Período da Taxa Informada
-            </label>
+            <label className="text-[11px] font-medium text-slate-400 mb-1" htmlFor="periodoInformado">Período da Taxa</label>
             <Select
               id="periodoInformado"
               name="periodoInformado"
@@ -102,13 +96,11 @@ export default function TaxaEquivalenteForm() {
               onChange={onChange}
               options={periodoOptions}
             />
-            <span className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Período em que a taxa é efetiva</span>
+            <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-600">Período em que a taxa é efetiva</span>
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-slate-300 mb-1" htmlFor="periodoSolicitado">
-              Período Solicitado (Equivalente)
-            </label>
+            <label className="text-[11px] font-medium text-slate-400 mb-1" htmlFor="periodoSolicitado">Período Solicitado</label>
             <Select
               id="periodoSolicitado"
               name="periodoSolicitado"
@@ -116,13 +108,11 @@ export default function TaxaEquivalenteForm() {
               onChange={onChange}
               options={periodoOptions}
             />
-            <span className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Período para conversão da taxa</span>
+            <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-600">Período para conversão da taxa</span>
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-slate-300 mb-1" htmlFor="n">
-              N° de Períodos (opcional)
-            </label>
+            <label className="text-[11px] font-medium text-slate-400 mb-1" htmlFor="n">N° de Períodos (opc.)</label>
             <input
               id="n"
               name="n"
@@ -131,72 +121,41 @@ export default function TaxaEquivalenteForm() {
               value={values.n}
               onChange={onChange}
               placeholder="ex: 12"
-              className="rounded-lg border px-3 py-2 bg-slate-900/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 border-slate-600"
+              className="calc-input rounded-lg border border-slate-700/50 px-3 py-2.5 bg-[#0c0c14] text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500/50 text-sm"
             />
-            <span className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Quantidade de períodos (se aplicável)</span>
+            <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-600">Quantidade de períodos (se aplicável)</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <button 
-            type="submit" 
-            disabled={loading} 
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:bg-sky-800/50 disabled:cursor-not-allowed px-5 py-2 text-sm font-medium shadow shadow-sky-900/50 transition-colors"
+        {/* Action buttons */}
+        <div className="flex gap-3 mt-5">
+          <button
+            type="submit"
+            disabled={loading}
+            className="calc-btn calc-btn-primary flex-1 rounded-xl px-5 py-3 text-sm font-bold uppercase tracking-wider text-white cursor-pointer inline-flex items-center justify-center gap-2"
           >
-            {loading && <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-transparent" />}
-            {loading ? 'Calculando...' : 'Calcular'}
+            {loading && <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />}
+            {loading ? 'Calculando...' : '= Calcular'}
           </button>
-          <button 
-            type="reset" 
-            disabled={loading} 
-            className="rounded-lg border border-slate-600 hover:border-slate-500 px-5 py-2 text-sm font-medium text-slate-200 disabled:opacity-50"
+          <button
+            type="reset"
+            disabled={loading}
+            className="calc-btn rounded-xl border border-slate-700/50 bg-slate-800/40 hover:bg-slate-700/40 px-5 py-3 text-sm font-semibold text-slate-400 hover:text-slate-200 cursor-pointer disabled:opacity-40"
           >
-            Limpar
+            C
           </button>
         </div>
       </form>
 
-      {result && (
-        <div className="mt-6">
-          <div className="text-sm font-medium text-slate-300 mb-3">Resultado</div>
-          {result.conversao && (
-            <div className="mb-4 p-4 bg-emerald-950/30 border border-emerald-700/40 rounded-lg">
-              <p className="text-emerald-300 text-sm font-medium">{result.conversao}</p>
-            </div>
-          )}
-          <div className="grid gap-2 text-sm">
-            <div className="flex justify-between p-3 bg-slate-950/70 border border-slate-700 rounded-lg">
-              <span className="text-slate-400">Taxa Equivalente (%):</span>
-              <span className="text-emerald-300 font-semibold">{result.taxaEquivalente?.toFixed(6)}%</span>
-            </div>
-            <div className="flex justify-between p-3 bg-slate-950/70 border border-slate-700 rounded-lg">
-              <span className="text-slate-400">Taxa Informada (decimal):</span>
-              <span className="text-sky-300">{result.taxaInformadaDecimal?.toFixed(8)}</span>
-            </div>
-            <div className="flex justify-between p-3 bg-slate-950/70 border border-slate-700 rounded-lg">
-              <span className="text-slate-400">Taxa Equivalente (decimal):</span>
-              <span className="text-sky-300">{result.taxaEquivalenteDecimal?.toFixed(8)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-6 text-sm text-rose-300 bg-rose-950/30 border border-rose-700/40 rounded-lg p-3">
-          <strong>Erro:</strong> {error}
-        </div>
-      )}
-
+      {/* Usage examples when empty */}
       {!result && !error && (
-        <div className="mt-6">
-          <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-700/50">
-            <h4 className="text-sm font-semibold text-slate-200 mb-2">Exemplos de uso:</h4>
-            <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
-              <li>Taxa de 2% ao mês → equivalente ao ano</li>
-              <li>Taxa de 12% ao ano → equivalente ao mês</li>
-              <li>Taxa de 5% ao semestre → equivalente ao trimestre</li>
-            </ul>
-          </div>
+        <div className="mt-4 p-3 rounded-lg bg-[#0c0c14] border border-slate-800/40">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Exemplos</h4>
+          <ul className="text-[10px] text-slate-600 space-y-0.5 list-disc list-inside">
+            <li>2% a.m. → equivalente a.a.</li>
+            <li>12% a.a. → equivalente a.m.</li>
+            <li>5% a.s. → equivalente a.t.</li>
+          </ul>
         </div>
       )}
     </div>

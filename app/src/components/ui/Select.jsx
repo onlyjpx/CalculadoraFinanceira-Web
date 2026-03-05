@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-export default function Select({ value, onChange, options = [], placeholder = 'Selecione...', className = '', name }) {
+export default function Select({ value, onChange, options = [], placeholder = 'Selecione...', className = '', name = 'target' }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
+  const onChangeRef = useRef(onChange);
+  const nameRef = useRef(name);
+
+  onChangeRef.current = onChange;
+  nameRef.current = name;
   const activeIndex = useMemo(() => options.findIndex((o) => o.value === value), [options, value]);
   const [highlight, setHighlight] = useState(activeIndex >= 0 ? activeIndex : 0);
 
@@ -23,12 +28,12 @@ export default function Select({ value, onChange, options = [], placeholder = 'S
       if (e.key === 'Enter') {
         e.preventDefault();
         const opt = options[highlight];
-        if (opt) { onChange({ target: { value: opt.value, name: name } }); setOpen(false); }
+        if (opt) { onChangeRef.current({ target: { value: opt.value, name: nameRef.current } }); setOpen(false); }
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, highlight, options, onChange]);
+  }, [open, highlight, options]);
 
   const selected = options.find((o) => o.value === value);
 
@@ -36,7 +41,7 @@ export default function Select({ value, onChange, options = [], placeholder = 'S
     <div ref={rootRef} className={`relative ${className}`}>
       <button
         type="button"
-        className="w-full rounded-lg bg-slate-900/60 border border-slate-600 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 flex items-center justify-between"
+        className="w-full rounded-lg bg-slate-900/60 border border-slate-600 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/50 flex items-center justify-between"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -55,9 +60,9 @@ export default function Select({ value, onChange, options = [], placeholder = 'S
               aria-selected={opt.value === value}
               className={`px-3 py-2 text-sm cursor-pointer select-none ${
                 idx === highlight ? 'bg-slate-800 text-slate-100' : 'text-slate-200'
-              } ${opt.value === value ? 'bg-sky-900/40 text-sky-300' : ''}`}
+              } ${opt.value === value ? 'bg-teal-900/40 text-teal-300' : ''}`}
               onMouseEnter={() => setHighlight(idx)}
-              onClick={() => { onChange({ target: { value: opt.value, name: name } }); setOpen(false); }}
+              onClick={() => { onChangeRef.current({ target: { value: opt.value, name: nameRef.current } }); setOpen(false); }}
             >
               {opt.label}
             </li>
